@@ -190,7 +190,8 @@ class VideoViewerModal(ModalScreen[None]):
             video_url = self.vid_url
             if "youtube.com" in video_url or "youtu.be" in video_url:
                 self.app.call_from_thread(self._update_video, "⏳ Resolving YouTube stream (yt-dlp)...")
-                ydl_opts = {'format': 'worstvideo[ext=mp4]/lowest', 'quiet': True}
+                # Grab a higher quality stream so subtitles are readable before downsampling
+                ydl_opts = {'format': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]/best', 'quiet': True}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(video_url, download=False)
                     video_url = info['url']
@@ -241,8 +242,8 @@ class VideoViewerModal(ModalScreen[None]):
                 new_w = max(1, int(w_orig * scale))
                 new_h = max(1, int(h_orig * scale))
 
-                # Downsample (use NEAREST for speed during video playback)
-                frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+                # Smooth downsampling (INTER_AREA) to keep small subtitle pixels readable
+                frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
                 segments = []
