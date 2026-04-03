@@ -190,11 +190,13 @@ class VideoViewerModal(ModalScreen[None]):
             video_url = self.vid_url
             if "youtube.com" in video_url or "youtu.be" in video_url:
                 self.app.call_from_thread(self._update_video, "⏳ Resolving YouTube stream (yt-dlp)...")
-                # Grab a higher quality stream so subtitles are readable before downsampling
-                ydl_opts = {'format': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]/best', 'quiet': True}
+                # Request the highest quality single-file format (combining video/audio) up to 720p/1080p for clear subtitles
+                ydl_opts = {'format': 'best[ext=mp4]/best', 'quiet': True}
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(video_url, download=False)
-                    video_url = info['url']
+                    video_url = info.get('url')
+                    if not video_url and 'entries' in info:
+                        video_url = info['entries'][0].get('url')
 
             cap = cv2.VideoCapture(video_url)
             if not cap.isOpened():
