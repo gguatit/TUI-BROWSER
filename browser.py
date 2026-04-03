@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 from typing import Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, unquote
 
 import html2text
 import requests
@@ -34,11 +34,11 @@ from textual.widgets import Button, Footer, Input, Label, Markdown, Static
 # Constants
 # ---------------------------------------------------------------------------
 
-DEFAULT_HOME_URL = "https://lite.duckduckgo.com/lite/"
+DEFAULT_HOME_URL = "https://search.brave.com/"
 REQUEST_TIMEOUT = 15  # seconds
 
 REQUEST_HEADERS = {
-    "User-Agent": "TUI-Browser/1.0 (terminal; python-requests)",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
     "Accept-Encoding": "gzip, deflate",
@@ -56,7 +56,7 @@ Welcome to **TUI Browser** — a clean, lightweight terminal web browser.
 
 ## Quick Links
 
-- [DuckDuckGo Lite](https://lite.duckduckgo.com/lite/)
+- [Brave Search](https://search.brave.com/)
 - [Wikipedia (Mobile)](https://en.m.wikipedia.org/wiki/Main_Page)
 - [Hacker News](https://news.ycombinator.com/)
 - [Python 3 Docs](https://docs.python.org/3/)
@@ -109,7 +109,7 @@ class TUIBrowser(App[None]):
     CSS = """
     /* ── Toolbar ── */
     #toolbar {
-        height: 3;
+        height: auto;
         background: $panel;
         border-bottom: solid $primary-darken-3;
         padding: 0 1;
@@ -118,7 +118,7 @@ class TUIBrowser(App[None]):
 
     .nav-btn {
         min-width: 5;
-        height: 3;
+        height: auto;
         border: none;
         background: transparent;
         color: $text;
@@ -137,18 +137,19 @@ class TUIBrowser(App[None]):
 
     #url-bar {
         height: 1;
-        border: round $primary-darken-2;
+        border: none;
         background: $surface;
         margin: 0 1;
     }
 
     #url-bar:focus {
-        border: round $accent;
+        border: none;
+        background: $primary-darken-1;
     }
 
     #go-btn {
         min-width: 6;
-        height: 3;
+        height: auto;
         background: $primary;
         color: $text;
         border: none;
@@ -315,7 +316,7 @@ class TUIBrowser(App[None]):
             return "https://" + url
         # Treat as a search query
         encoded = requests.utils.quote(url, safe="")
-        return f"https://lite.duckduckgo.com/lite/?q={encoded}"
+        return f"https://search.brave.com/search?q={encoded}"
 
     def _update_nav_buttons(self) -> None:
         try:
@@ -404,6 +405,35 @@ class TUIBrowser(App[None]):
                 href = a["href"]
                 if href and not href.startswith(("#", "javascript:", "mailto:", "tel:")):
                     a["href"] = urljoin(base_url, href)
+
+            # Special case: Clean formatting for Brave Search Results
+            if "search.brave.com/search" in base_url:
+                query_term = ""
+                if "?q=" in base_url:
+                    query_term = base_url.split("?q=")[-1].split("&")[0]
+                    query_term = unquote(query_term).replace("+", " ")
+                
+                md_lines = [f"# 🔎 Search Results for '{query_term}'\n"]
+                
+                snippets = soup.select(".snippet[data-type=web]")
+                if snippets:
+                    for s in snippets:
+                        title_elem = s.select_one(".title")
+                        a_elem = s.select_one("a")
+                        desc_elem = s.select_one(".content, .snippet-description, .description")
+                        
+                        if title_elem and a_elem:
+                            title = title_elem.get_text(strip=True)
+                            href = a_elem.get("href", "")
+                            desc = desc_elem.get_text(strip=True) if desc_elem else ""
+                            
+                            md_lines.append(f"## [{title}]({href})")
+                            md_lines.append(f"*{href}*")
+                            if desc:
+                                md_lines.append(f"\n> {desc}")
+                            md_lines.append("\n---\n")
+                    
+                    return "\n".join(md_lines).strip()
 
             converter = html2text.HTML2Text()
             converter.ignore_images = True       # images can't be rendered in terminal

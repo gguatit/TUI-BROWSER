@@ -23,7 +23,7 @@ A **cross-platform terminal web browser** built with Python and [Textual](https:
 │  Welcome to TUI Browser — a clean, lightweight terminal web browser.│
 │                                                                     │
 │  Quick Links                                                        │
-│  • DuckDuckGo Lite                                                  │
+│  • Brave Search                                                     │
 │  • Wikipedia (Mobile)                                               │
 │  • Hacker News                                                      │
 │  • Python 3 Docs                                                    │
@@ -77,7 +77,7 @@ python browser.py
 |-------|--------|
 | `https://example.com` | Navigate directly |
 | `example.com` | Adds `https://` automatically |
-| `search term` | DuckDuckGo Lite search |
+| `search term` | Brave search |
 
 ---
 

@@ -33,14 +33,14 @@ class TestUrlNormalisation:
         url = "http://example.com/"
         assert self.app._normalise_url(url) == url
 
-    def test_search_query_becomes_duckduckgo(self):
+    def test_search_query_becomes_brave(self):
         result = self.app._normalise_url("hello world")
-        assert result.startswith("https://lite.duckduckgo.com/lite/?q=")
+        assert result.startswith("https://search.brave.com/search?q=")
         assert "hello" in result
 
     def test_single_word_becomes_search(self):
         result = self.app._normalise_url("wikipedia")
-        assert "duckduckgo" in result
+        assert "brave" in result
 
     def test_url_with_path_unchanged(self):
         url = "https://github.com/user/repo"
