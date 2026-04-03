@@ -180,7 +180,7 @@ async def test_loading_indicator_toggle():
         await pilot.pause(0.2)
         app.is_loading = True
         await pilot.pause(0.1)
-        assert str(app.query_one("#refresh-btn").label) == "✕"
+        assert str(app.query_one("#refresh-btn").label) == "✕  Stop"
         app.is_loading = False
         await pilot.pause(0.1)
-        assert str(app.query_one("#refresh-btn").label) == "↺"
+        assert str(app.query_one("#refresh-btn").label) == "↻  Refresh"
